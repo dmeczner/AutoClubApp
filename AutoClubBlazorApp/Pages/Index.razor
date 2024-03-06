@@ -1,9 +1,200 @@
 ﻿@page "/"
 
-<PageTitle>Index</PageTitle>
+@using Microsoft.EntityFrameworkCore
+@using Radzen.Blazor
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+@using AutoClubBlazorApp.AutoClubEntities;
 
-<h1>Hello, world!</h1>
+@inject NavigationManager UriHelper
 
-Welcome to your new app.
+<h3>Owners</h3>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="10px" class="mt-2 mb-4">
+    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle_outline" Text="Add New Owner" Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && ownersToInsert.Count() > 0)" />
+    <div style="white-space:nowrap; margin-left: 20px ">Edit Mode:</div>
+    <RadzenSelectBar @bind-Value="@editMode" TextProperty="Text" ValueProperty="Value" style="margin-right: 16px"
+                     Data="@(Enum.GetValues(typeof(DataGridEditMode)).Cast<DataGridEditMode>().Select(t => new { Text = $"{t}", Value = t }))" Size="ButtonSize.Small"
+                     Disabled="@(editMode == DataGridEditMode.Multiple && owners.Count() > 1)" />
+</RadzenStack>
+
+<RadzenDataGrid @ref="ownersGrid" TItem="Owner" Data="@owners" Count="@_count" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" AllowFiltering="true" AllowPaging="true" PageSize="3" AllowSorting="true" EditMode="@editMode">
+    <Columns>
+        <RadzenDataGridColumn TItem="Owner" Property="Id" Title="ID">
+            <FooterTemplate>
+                Total owners: <b>@owners.Count()</b>
+            </FooterTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Owner" Property="FirstName" Title="First Name">
+            <EditTemplate Context="owner">
+                <RadzenTextBox @bind-Value="owner.FirstName" Style="width:200px; display: block" Name="FirstName" MaxLength="200" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Owner" Property="LastName" Title="Last Name">
+            <EditTemplate Context="owner">
+                <RadzenTextBox @bind-Value="owner.LastName" Style="width:200px; display: block" Name="LastName" MaxLength="200" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Owner" Property="Birthday" Title="Birthday">
+            <Template Context="owner">
+                @String.Format("{0:d}", owner.Birthday)
+            </Template>
+            <EditTemplate Context="owner">
+                <RadzenDatePicker @bind-Value="owner.Birthday" Style="width:100%" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Owner" Context="owner" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="140px">
+            <Template Context="owner">
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(owner))" @onclick:stopPropagation="true">
+                </RadzenButton>
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))" @onclick:stopPropagation="true">
+                </RadzenButton>
+            </Template>
+            <EditTemplate Context="owner">
+                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(owner))">
+                </RadzenButton>
+                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(owner))">
+                </RadzenButton>
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))">
+                </RadzenButton>
+            </EditTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Owner" Context="owner" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="160px">
+            <Template Context="owner">
+                <RadzenButton ButtonStyle="ButtonStyle.Info" Text="Show Cars" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => OpenCars(owner))" @onclick:stopPropagation="true">
+                </RadzenButton>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Inject]
+    ProtectedSessionStorage sessionStorage { get; set; }
+    //https://blazor.radzen.com/datagrid-inline-edit
+    RadzenDataGrid<Owner> ownersGrid;
+    DataGridEditMode editMode = DataGridEditMode.Single;
+    private IEnumerable<Owner> owners;
+    private int _count;
+    public AutoClubContext db = new();
+
+
+    List<Owner> ownersToInsert = new List<Owner>();
+    List<Owner> ownersToUpdate = new List<Owner>();
+
+    void Reset()
+    {
+        ownersToInsert.Clear();
+        ownersToUpdate.Clear();
+    }
+
+    void Reset(Owner owner)
+    {
+        ownersToInsert.Remove(owner);
+        ownersToUpdate.Remove(owner);
+    }
+
+    async Task InsertRow()
+    {
+        if (editMode == DataGridEditMode.Single)
+        {
+            Reset();
+        }
+
+        var owner = new Owner { FirstName = "", LastName = "" };
+        ownersToInsert.Add(owner);
+        if (!owners.Any())
+        {
+            OnCreateRow(owner);
+            await ownersGrid.Reload();
+        }
+        else
+        {
+            await ownersGrid.InsertRow(owner);
+        }
+
+    }
+    void OnUpdateRow(Owner owner)
+    {
+        Reset(owner);
+
+        db.Update(owner);
+
+        db.SaveChanges();
+    }
+
+
+    void OnCreateRow(Owner owner)
+    {
+        db.Add(owner);
+
+        db.SaveChanges();
+
+        ownersToInsert.Remove(owner);
+    }
+
+    async Task SaveRow(Owner owner)
+    {
+        await ownersGrid.UpdateRow(owner);
+    }
+
+    async Task EditRow(Owner owner)
+    {
+        if (editMode == DataGridEditMode.Single && ownersToInsert.Count() > 0)
+        {
+            Reset();
+        }
+
+        ownersToUpdate.Add(owner);
+        await ownersGrid.EditRow(owner);
+    }
+
+    void CancelEdit(Owner owner)
+    {
+        Reset(owner);
+
+        ownersGrid.CancelEditRow(owner);
+
+        var orderEntry = db.Entry(owner);
+        if (orderEntry.State == EntityState.Modified)
+        {
+            orderEntry.CurrentValues.SetValues(orderEntry.OriginalValues);
+            orderEntry.State = EntityState.Unchanged;
+        }
+    }
+
+    async Task OpenCars(Owner owner)
+    {
+        await sessionStorage.SetAsync("SelectedOwner", owner);
+        UriHelper.NavigateTo("cars");//code to redirect to second page
+    }
+
+    async Task DeleteRow(Owner owner)
+    {
+
+        Reset(owner);
+
+        if (owners.Contains(owner))
+        {
+            db.Remove<Owner>(owner);
+
+            db.SaveChanges();
+
+            await ownersGrid.Reload();
+        }
+        else
+        {
+            ownersGrid.CancelEditRow(owner);
+            await ownersGrid.Reload();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        owners = db.Owners;
+        _count = owners.Count();
+
+    }
+}
