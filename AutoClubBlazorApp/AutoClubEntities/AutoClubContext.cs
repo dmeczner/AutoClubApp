@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using AutoClubBlazorApp.AutoClubEntities;
 using Microsoft.EntityFrameworkCore;
 
-namespace AutoClubBlazorApp;
+namespace AutoClubBlazorApp.AutoClubEntities;
 
 public partial class AutoClubContext : DbContext
 {
@@ -14,6 +13,11 @@ public partial class AutoClubContext : DbContext
     public AutoClubContext(DbContextOptions<AutoClubContext> options)
         : base(options)
     {
+    }
+
+    public IEnumerable<Car> SPGetCarsOfOwner(int id)
+    {
+        return Cars.FromSqlInterpolated<Car>($"[dbo].[GetOwnerCars] {id}").ToArray();
     }
 
     public virtual DbSet<Car> Cars { get; set; }
