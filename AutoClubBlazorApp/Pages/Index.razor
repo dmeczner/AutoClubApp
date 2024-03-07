@@ -45,18 +45,18 @@
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Owner" Context="owner" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="140px">
             <Template Context="owner">
-                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(owner))" @onclick:stopPropagation="true"/>
-                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))" @onclick:stopPropagation="true"/>
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(owner))" @onclick:stopPropagation="true" />
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))" @onclick:stopPropagation="true" />
             </Template>
             <EditTemplate Context="owner">
-                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(owner))"/>
-                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(owner))"/>
-                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))"/>
+                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(owner))" />
+                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(owner))" />
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))" />
             </EditTemplate>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Owner" Context="owner" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="160px">
             <Template Context="owner">
-                <RadzenButton ButtonStyle="ButtonStyle.Info" Text="Show Cars" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => OpenCars(owner))" @onclick:stopPropagation="true"/>
+                <RadzenButton ButtonStyle="ButtonStyle.Info" Text="Show Cars" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => OpenCars(owner))" @onclick:stopPropagation="true" />
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -64,11 +64,10 @@
 
 @code {
     [Inject]
-    ProtectedSessionStorage sessionStorage { get; set; }
-    //https://blazor.radzen.com/datagrid-inline-edit
-    RadzenDataGrid<Owner> ownersGrid;
-    DataGridEditMode editMode = DataGridEditMode.Single;
-    private IEnumerable<Owner> owners;
+    private ProtectedSessionStorage sessionStorage { get; set; }
+    private RadzenDataGrid<Owner> ownersGrid;
+    private DataGridEditMode editMode = DataGridEditMode.Single;
+    private List<Owner> owners;
     private int _count;
     public AutoClubContext db = new();
 
@@ -149,11 +148,11 @@
 
         ownersGrid.CancelEditRow(owner);
 
-        var orderEntry = db.Entry(owner);
-        if (orderEntry.State == EntityState.Modified)
+        var ownerEntry = db.Entry(owner);
+        if (ownerEntry.State == EntityState.Modified)
         {
-            orderEntry.CurrentValues.SetValues(orderEntry.OriginalValues);
-            orderEntry.State = EntityState.Unchanged;
+            ownerEntry.CurrentValues.SetValues(ownerEntry.OriginalValues);
+            ownerEntry.State = EntityState.Unchanged;
         }
     }
 
@@ -195,7 +194,11 @@
     {
         await base.OnInitializedAsync();
 
-        owners = db.Owners;
+        owners = db.Owners.ToList();
+        if (!owners.Any())
+        {
+            owners.Add(new Owner());
+        }
         _count = owners.Count();
 
     }

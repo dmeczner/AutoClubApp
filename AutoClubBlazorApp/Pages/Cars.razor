@@ -55,11 +55,11 @@ else
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Car" Context="car" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="140px">
                 <Template Context="car">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(car))" @onclick:stopPropagation="true"/>
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(car))" @onclick:stopPropagation="true" />
                 </Template>
                 <EditTemplate Context="car">
-                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(car))"/>
-                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(car))"/>
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(car))" />
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(car))" />
                 </EditTemplate>
             </RadzenDataGridColumn>
         </Columns>
@@ -210,9 +210,9 @@ else
         {
             cars.Add(new Car());
         }
-        foreach (var owner in cars)
+        foreach (var car in cars)
         {
-            owner.OwnersAndCarsConnections = db.OwnersAndCarsConnections.ToList();
+            car.OwnersAndCarsConnections = db.OwnersAndCarsConnections.Where(x => x.OwnerId == _selectedOwner.Id && x.CarId == car.Id).ToList();
         }
         _count = cars.Count();
         db.SaveChanges();
