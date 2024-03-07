@@ -208,6 +208,10 @@ else
         await GetOrderID();
         await base.OnInitializedAsync();
         owners = db.SPGetCarsOfOwner(_selectedOwner.Id);
+        foreach (var owner in owners)
+        {
+            owner.OwnersAndCarsConnections = db.OwnersAndCarsConnections.ToList();
+        }
         //_count = owners.Any()? owners.Count() : 0;
 
     }
