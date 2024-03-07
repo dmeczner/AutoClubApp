@@ -15,9 +15,9 @@ public partial class AutoClubContext : DbContext
     {
     }
 
-    public IEnumerable<Car> SPGetCarsOfOwner(int id)
+    public List<Car> SPGetCarsOfOwner(int id)
     {
-        return Cars.FromSqlInterpolated<Car>($"[dbo].[GetOwnerCars] {id}").ToArray();
+        return Cars.FromSqlInterpolated($"[dbo].[GetOwnerCars] {id}").ToList();
     }
 
     public virtual DbSet<Car> Cars { get; set; }

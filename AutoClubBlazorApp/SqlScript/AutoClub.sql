@@ -30,7 +30,11 @@ CREATE TABLE OwnersAndCarsConnection
 
 GO
 
+ALTER TABLE OwnersAndCarsConnection   
+ADD CONSTRAINT UN_OwnerId_CarId UNIQUE (OwnerId, CarId);   
+GO  
+
+
 CREATE PROCEDURE dbo.GetOwnerCars @OwnerId int OUT
 AS
 SELECT c.Id, c.CarBrand, c.[Type], c.LicensePlate, c.TimeOfProduction FROM [AutoClub].[dbo].[Cars] AS c INNER JOIN [AutoClub].[dbo].[OwnersAndCarsConnection] AS oc ON c.Id = oc.CarId WHERE OC.OwnerId=@OwnerId
-

@@ -45,24 +45,18 @@
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Owner" Context="owner" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="140px">
             <Template Context="owner">
-                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(owner))" @onclick:stopPropagation="true">
-                </RadzenButton>
-                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))" @onclick:stopPropagation="true">
-                </RadzenButton>
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(owner))" @onclick:stopPropagation="true"/>
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))" @onclick:stopPropagation="true"/>
             </Template>
             <EditTemplate Context="owner">
-                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(owner))">
-                </RadzenButton>
-                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(owner))">
-                </RadzenButton>
-                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))">
-                </RadzenButton>
+                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(owner))"/>
+                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(owner))"/>
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(owner))"/>
             </EditTemplate>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Owner" Context="owner" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="160px">
             <Template Context="owner">
-                <RadzenButton ButtonStyle="ButtonStyle.Info" Text="Show Cars" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => OpenCars(owner))" @onclick:stopPropagation="true">
-                </RadzenButton>
+                <RadzenButton ButtonStyle="ButtonStyle.Info" Text="Show Cars" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => OpenCars(owner))" @onclick:stopPropagation="true"/>
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -176,6 +170,13 @@
 
         if (owners.Contains(owner))
         {
+            foreach (var item in owner.OwnersAndCarsConnections)
+            {
+                db.Remove<OwnersAndCarsConnection>(item);
+            }
+
+            db.SaveChanges();
+
             db.Remove<Owner>(owner);
 
             db.SaveChanges();
@@ -185,6 +186,7 @@
         else
         {
             ownersGrid.CancelEditRow(owner);
+
             await ownersGrid.Reload();
         }
     }

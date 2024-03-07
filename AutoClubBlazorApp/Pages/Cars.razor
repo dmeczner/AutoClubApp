@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 @using Microsoft.AspNetCore.Components.Server;
 @using Microsoft.EntityFrameworkCore
-
+@inject NavigationManager UriHelper
 <h3>Cars</h3>
 @if (_selectedOwner == null)
 {
@@ -11,22 +11,23 @@
 }
 else
 {
+    <RadzenButton Text="◄" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => GoBack())" @onclick:stopPropagation="true" />
     <h4>@_selectedOwner.FirstName @_selectedOwner.LastName</h4>
 
 
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="10px" class="mt-2 mb-4">
-        <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle_outline" Text="Add New Car" Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && ownersToInsert.Count() > 0)" />
+        <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle_outline" Text="Add New Car" Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && carsToInsert.Count() > 0)" />
         <div style="white-space:nowrap; margin-left: 20px ">Edit Mode:</div>
         <RadzenSelectBar @bind-Value="@editMode" TextProperty="Text" ValueProperty="Value" style="margin-right: 16px"
                          Data="@(Enum.GetValues(typeof(DataGridEditMode)).Cast<DataGridEditMode>().Select(t => new { Text = $"{t}", Value = t }))" Size="ButtonSize.Small"
-                         Disabled="@(editMode == DataGridEditMode.Multiple && owners.Count() > 1)" />
+                         Disabled="@(editMode == DataGridEditMode.Multiple && cars.Count() > 1)" />
     </RadzenStack>
 
-    <RadzenDataGrid @ref="ownersGrid" TItem="Car" Data="@owners" Count="@_count" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" AllowFiltering="true" AllowPaging="true" PageSize="3" AllowSorting="true" EditMode="@editMode">
+    <RadzenDataGrid @ref="carsGrid" TItem="Car" Data="@cars" Count="@_count" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" AllowFiltering="true" AllowPaging="true" PageSize="3" AllowSorting="true" EditMode="@editMode">
         <Columns>
             <RadzenDataGridColumn TItem="Car" Property="Id" Title="ID">
                 <FooterTemplate>
-                    Total cars: <b>@owners.Count()</b>
+                    Total cars: <b>@cars.Count()</b>
                 </FooterTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Car" Property="CarBrand" Title="Car Brand">
@@ -41,7 +42,7 @@ else
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Car" Property="LicensePlate" Title="License Plate">
                 <EditTemplate Context="car">
-                    <RadzenTextBox @bind-Value="car.LicensePlate" Style="width:200px; display: block" Name="LicensePlate" MaxLength="200" />
+                    <RadzenTextBox @bind-Value="car.LicensePlate" Style="width:200px; display: block" Name="LicensePlate" MaxLength="7" />
                 </EditTemplate>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Car" Property="TimeOfProduction" Title="Time Of Production">
@@ -54,18 +55,11 @@ else
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Car" Context="car" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="140px">
                 <Template Context="car">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(car))" @onclick:stopPropagation="true">
-                    </RadzenButton>
-                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(car))" @onclick:stopPropagation="true">
-                    </RadzenButton>
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(car))" @onclick:stopPropagation="true"/>
                 </Template>
                 <EditTemplate Context="car">
-                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(car))">
-                    </RadzenButton>
-                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(car))">
-                    </RadzenButton>
-                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(car))">
-                    </RadzenButton>
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(car))"/>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(car))"/>
                 </EditTemplate>
             </RadzenDataGridColumn>
         </Columns>
@@ -78,24 +72,24 @@ else
     private Owner _selectedOwner;
 
     DataGridEditMode editMode = DataGridEditMode.Single;
-    RadzenDataGrid<Car> ownersGrid;
+    RadzenDataGrid<Car> carsGrid;
     public AutoClubContext db = new();
-    private IEnumerable<Car> owners;
+    private List<Car> cars;
     private int _count;
 
-    List<Car> ownersToInsert = new List<Car>();
-    List<Car> ownersToUpdate = new List<Car>();
+    List<Car> carsToInsert = new List<Car>();
+    List<Car> carsToUpdate = new List<Car>();
 
     void Reset()
     {
-        ownersToInsert.Clear();
-        ownersToUpdate.Clear();
+        carsToInsert.Clear();
+        carsToUpdate.Clear();
     }
 
-    void Reset(Car owner)
+    void Reset(Car car)
     {
-        ownersToInsert.Remove(owner);
-        ownersToUpdate.Remove(owner);
+        carsToInsert.Remove(car);
+        carsToUpdate.Remove(car);
     }
 
     async Task InsertRow()
@@ -105,114 +99,123 @@ else
             Reset();
         }
 
-        var owner = new Car { LicensePlate = "" };
-        ownersToInsert.Add(owner);
-        if (!owners.Any())
+        var car = new Car { LicensePlate = "" };
+        carsToInsert.Add(car);
+        if (!cars.Any())
         {
-            OnCreateRow(owner);
-            await ownersGrid.Reload();
+            OnCreateRow(car);
+            await carsGrid.Reload();
         }
         else
         {
-            await ownersGrid.InsertRow(owner);
+            await carsGrid.InsertRow(car);
         }
 
     }
-    void OnUpdateRow(Car owner)
+    void OnUpdateRow(Car car)
     {
-        Reset(owner);
+        Reset(car);
 
-        db.Update(owner);
-
+        db.Update(car);
+        db.SaveChanges();
+        if (!car.OwnersAndCarsConnections.Any())
+        {
+            OwnersAndCarsConnection ownersAndCarsConnection = new OwnersAndCarsConnection()
+                {
+                    CarId = car.Id,
+                    OwnerId = _selectedOwner.Id,
+                };
+            car.OwnersAndCarsConnections.Add(ownersAndCarsConnection);
+        }
         db.SaveChanges();
     }
 
 
-    void OnCreateRow(Car owner)
+    void OnCreateRow(Car car)
     {
-        db.Add(owner);
+        db.Add(car);
 
         db.SaveChanges();
         OwnersAndCarsConnection ownersAndCarsConnection = new OwnersAndCarsConnection()
             {
-                CarId = owner.Id,
+                CarId = car.Id,
                 OwnerId = _selectedOwner.Id,
             };
 
         db.Add(ownersAndCarsConnection);
         db.SaveChanges();
-        ownersToInsert.Remove(owner);
+        carsToInsert.Remove(car);
     }
 
-    async Task SaveRow(Car owner)
+    async Task SaveRow(Car car)
     {
-        await ownersGrid.UpdateRow(owner);
+        await carsGrid.UpdateRow(car);
     }
 
-    async Task EditRow(Car owner)
+    async Task EditRow(Car car)
     {
-        if (editMode == DataGridEditMode.Single && ownersToInsert.Count() > 0)
+        if (editMode == DataGridEditMode.Single && carsToInsert.Count() > 0)
         {
             Reset();
         }
 
-        ownersToUpdate.Add(owner);
-        await ownersGrid.EditRow(owner);
+        carsToUpdate.Add(car);
+        await carsGrid.EditRow(car);
     }
 
-    void CancelEdit(Car owner)
+    void CancelEdit(Car car)
     {
-        Reset(owner);
+        Reset(car);
 
-        ownersGrid.CancelEditRow(owner);
+        carsGrid.CancelEditRow(car);
 
-        var orderEntry = db.Entry(owner);
-        if (orderEntry.State == EntityState.Modified)
+        var carEntry = db.Entry(car);
+        if (carEntry.State == EntityState.Modified)
         {
-            orderEntry.CurrentValues.SetValues(orderEntry.OriginalValues);
-            orderEntry.State = EntityState.Unchanged;
+            carEntry.CurrentValues.SetValues(carEntry.OriginalValues);
+            carEntry.State = EntityState.Unchanged;
         }
     }
 
-    async Task DeleteRow(Car owner)
+    async Task GoBack() => UriHelper.NavigateTo("/");//code to redirect to second page
+
+    async Task DeleteRow(Car car)
     {
 
-        Reset(owner);
+        Reset(car);
 
-        if (owners.Contains(owner))
+        if (cars.Contains(car))
         {
-            db.Remove<Car>(owner);
-
+            foreach (var item in car.OwnersAndCarsConnections)
+            {
+                db.Remove<OwnersAndCarsConnection>(item);
+            }
             db.SaveChanges();
 
-            await ownersGrid.Reload();
+            await carsGrid.Reload();
         }
         else
         {
-            ownersGrid.CancelEditRow(owner);
-            await ownersGrid.Reload();
+            carsGrid.CancelEditRow(car);
+            await carsGrid.Reload();
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
-        // List<Owner> persons = new List<Owner>();
-        // var person1 = new Owner { Id = 1, FirstName = "Max", LastName = "Mustermann", DayOfBirth = new DateTime(1990, 5, 19) };
-        // var person2 = new Owner { Id = 2, FirstName = "Sabine", LastName = "Sonntag", DayOfBirth = new DateTime(1992, 4, 29) };
-        // persons.Add(person1);
-        // persons.Add(person2);
-
-        // _employees = persons;
-        // _count = persons.Count;
-
         await GetOrderID();
         await base.OnInitializedAsync();
-        owners = db.SPGetCarsOfOwner(_selectedOwner.Id);
-        foreach (var owner in owners)
+        cars = db.SPGetCarsOfOwner(_selectedOwner.Id);
+        if (!cars.Any())
+        {
+            cars.Add(new Car());
+        }
+        foreach (var owner in cars)
         {
             owner.OwnersAndCarsConnections = db.OwnersAndCarsConnections.ToList();
         }
-        //_count = owners.Any()? owners.Count() : 0;
+        _count = cars.Count();
+        db.SaveChanges();
 
     }
 
@@ -223,7 +226,6 @@ else
         if (result.Success)
         {
             _selectedOwner = result.Value;
-            //result;
         }
 
     }
